@@ -84,4 +84,4 @@ Then uncomment the `bare` entry in `butter.config.lua` and point it at a Bare v3
 
 butter-col is early and unaudited. Like every same-origin proxy, all proxied sites share this origin, and CORS and SameSite aren't emulated yet. Don't log in to anything important through it, and don't expose the server to other people without putting authentication in front of it. Read butter-col's [known issues](https://github.com/TheAxis-Network/butter-col/blob/main/docs/known-issues.html) first.
 
-MIT. butter-col is © Axis Network.
+butter-col-app is licensed under the GNU Affero General Public License v3.0; see [LICENSE](LICENSE). butter-col itself, including the logo in `public/butter-col.png`, is MIT © Axis Network.
