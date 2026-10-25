@@ -1,0 +1,17 @@
+{
+  "name": "butter-col-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Example app for butter-col by Axis Network: a protocol test bench and mini browser in plain JavaScript.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "butter-col server start --site public --config butter.config.lua",
+    "stop": "butter-col server stop",
+    "reload": "butter-col server reload --site public --config butter.config.lua",
+    "test:config": "butter-col server test --site public --config butter.config.lua"
+  },
+  "dependencies": {
+    "@axis-network/butter-col": "^0.1.0"
+  }
+}

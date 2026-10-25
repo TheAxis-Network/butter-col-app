@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>butter-col-app</title>
+  <meta name="description" content="An example app for butter-col by Axis Network: a protocol test bench and a mini browser.">
+  <link rel="icon" href="/butter-col.png">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/" aria-label="butter-col-app home">
+      <img src="/butter-col.png" alt="" width="36" height="36">
+      <span>
+        <strong>butter-col-app</strong>
+        <small>an example app for the butter-col protocol</small>
+      </span>
+    </a>
+
+    <div class="status" id="status" data-state="loading" role="status" aria-live="polite">
+      <span class="dot" aria-hidden="true"></span>
+      <span id="status-text">Starting butter-col…</span>
+    </div>
+
+    <label class="transport">
+      <span>Transport</span>
+      <select id="transport" disabled><option>…</option></select>
+      <button type="button" id="transport-reset" class="ghost" title="Back to the deployment's default transport" disabled>Reset</button>
+    </label>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-browse" aria-controls="panel-browse" aria-selected="true">Browse</button>
+    <button role="tab" id="tab-tests" aria-controls="panel-tests" aria-selected="false">Test bench</button>
+    <button role="tab" id="tab-formatter" aria-controls="panel-formatter" aria-selected="false">Formatter</button>
+    <button role="tab" id="tab-probe" aria-controls="panel-probe" aria-selected="false">Wire probe</button>
+    <button role="tab" id="tab-about" aria-controls="panel-about" aria-selected="false">About</button>
+  </nav>
+
+  <main>
+    <!-- Browse: a small browser around a proxied page ----------------------->
+    <section id="panel-browse" role="tabpanel" aria-labelledby="tab-browse" class="panel browse">
+      <form id="browse-form" class="omnibox">
+        <div class="nav-buttons">
+          <button type="button" class="icon" data-browse="back" title="Back" aria-label="Back">&larr;</button>
+          <button type="button" class="icon" data-browse="forward" title="Forward" aria-label="Forward">&rarr;</button>
+          <button type="button" class="icon" data-browse="reload" title="Reload" aria-label="Reload">&#x21bb;</button>
+        </div>
+        <input id="browse-input" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Search, or type an address like example.com" aria-label="Address or search">
+        <button type="submit" class="primary">Go</button>
+        <button type="button" class="icon" data-browse="popout" title="Open in a new tab" aria-label="Open in a new tab">&#x2197;</button>
+      </form>
+      <div class="proxied-url">
+        <span>Proxy URL</span>
+        <code id="browse-proxied">—</code>
+      </div>
+      <div class="frame-wrap">
+        <div class="progress" id="browse-progress" data-state="done"></div>
+        <iframe id="browse-frame" title="Proxied page" allow="fullscreen; clipboard-read; clipboard-write; autoplay"></iframe>
+        <div class="frame-empty" id="browse-empty">
+          <p>Open a site to see it run through the service worker.</p>
+          <div class="chips">
+            <button type="button" class="chip" data-open="example.com">example.com</button>
+            <button type="button" class="chip" data-open="en.wikipedia.org/wiki/Butter">Wikipedia: Butter</button>
+            <button type="button" class="chip" data-open="news.ycombinator.com">Hacker News</button>
+            <button type="button" class="chip" data-open="github.com/TheAxis-Network/butter-col">butter-col on GitHub</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Test bench: automated end-to-end checks --------------------------->
+    <section id="panel-tests" role="tabpanel" aria-labelledby="tab-tests" class="panel" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Test bench</h2>
+          <p>Runs checks against this deployment: endpoints, the service worker, the codecs, the <code>/butter/fetch</code> wire format, the SSRF guard, the cookie jar and the WebSocket tunnel. The tests marked <em>network</em> also need the public site they name to be reachable.</p>
+        </div>
+        <button type="button" id="tests-run" class="primary">Run all tests</button>
+      </div>
+      <p class="summary" id="tests-summary" hidden></p>
+      <ol class="tests" id="tests-list"></ol>
+    </section>
+
+    <!-- Formatter: codecs and rewriters --------------------------------------->
+    <section id="panel-formatter" role="tabpanel" aria-labelledby="tab-formatter" class="panel" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>URL codecs</h2>
+          <p>This deployment uses <code id="codec-active">…</code>. A URL encoded with each of the four codecs, then decoded again. <code>xor</code> and <code>base64</code> hide the target but are not encryption.</p>
+        </div>
+      </div>
+      <label class="field">
+        <span>Target URL</span>
+        <input id="codec-input" type="url" value="https://example.com/search?q=butter&amp;lang=en#results" spellcheck="false">
+      </label>
+      <table class="codecs">
+        <thead><tr><th>Codec</th><th>Proxy URL</th><th>Round trip</th></tr></thead>
+        <tbody id="codec-rows"></tbody>
+      </table>
+
+      <div class="panel-head spaced">
+        <div>
+          <h2>Rewriters</h2>
+          <p>What the service worker does to responses before a page sees them. The formatter is the same module, loaded from <code>/butter/formatter.mjs</code>.</p>
+        </div>
+      </div>
+      <div class="rewrite">
+        <div class="rewrite-controls">
+          <label class="field inline">
+            <span>Kind</span>
+            <select id="rewrite-kind">
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="js">JavaScript</option>
+            </select>
+          </label>
+          <label class="field inline grow">
+            <span>Base URL</span>
+            <input id="rewrite-base" type="url" value="https://example.com/blog/post" spellcheck="false">
+          </label>
+        </div>
+        <div class="rewrite-io">
+          <label class="field">
+            <span>Input</span>
+            <textarea id="rewrite-input" rows="10" spellcheck="false"></textarea>
+          </label>
+          <label class="field">
+            <span>Rewritten</span>
+            <textarea id="rewrite-output" rows="10" spellcheck="false" readonly></textarea>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Wire probe: raw /butter/fetch requests --------------------------------->
+    <section id="panel-probe" role="tabpanel" aria-labelledby="tab-probe" class="panel" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Wire probe</h2>
+          <p>Send one raw request to <code>/butter/fetch</code>, the built-in transport's endpoint, without the service worker. The upstream status and headers come back wrapped in <code>X-Butter-*</code> headers.</p>
+        </div>
+      </div>
+      <div class="presets" id="probe-presets"></div>
+      <form id="probe-form" class="probe-form">
+        <div class="row">
+          <label class="field inline">
+            <span>Method</span>
+            <select id="probe-method">
+              <option>GET</option><option>HEAD</option><option>POST</option><option>PUT</option><option>DELETE</option>
+            </select>
+          </label>
+          <label class="field inline grow">
+            <span>X-Butter-URL</span>
+            <input id="probe-url" type="text" value="https://example.com/" spellcheck="false" required>
+          </label>
+        </div>
+        <label class="field">
+          <span>X-Butter-Headers <small>(JSON object)</small></span>
+          <input id="probe-headers" type="text" value='{"accept":"text/html"}' spellcheck="false">
+        </label>
+        <label class="field" id="probe-body-field" hidden>
+          <span>Body</span>
+          <textarea id="probe-body" rows="3" spellcheck="false">{"hello":"butter"}</textarea>
+        </label>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="probe-cookies"> X-Butter-Want-Cookies</label>
+          <button type="submit" class="primary">Send</button>
+        </div>
+      </form>
+      <div class="probe-result" id="probe-result" hidden>
+        <dl class="facts" id="probe-facts"></dl>
+        <h3>Upstream headers <small>(X-Butter-Headers)</small></h3>
+        <table class="headers"><tbody id="probe-headers-out"></tbody></table>
+        <h3>Body <small id="probe-body-size"></small></h3>
+        <pre id="probe-body-out"></pre>
+      </div>
+    </section>
+
+    <!-- About ------------------------------------------------------------------>
+    <section id="panel-about" role="tabpanel" aria-labelledby="tab-about" class="panel prose" hidden>
+      <h2>About this app</h2>
+      <p><strong>butter-col-app</strong> is an example app for <a href="https://github.com/TheAxis-Network/butter-col" target="_blank" rel="noopener">butter-col</a>, a service-worker web proxy by Axis Network. It is plain HTML, CSS and JavaScript with no build step, served by butter-col's own OpenResty server with <code>--site public</code>.</p>
+      <h3>How it works</h3>
+      <ol>
+        <li><code>ButterController</code> (from <code>/butter/controller.mjs</code>) registers <code>/butter/sw.js</code> with scope <code>/</code> and reads <code>/butter/config.js</code>, which also issues the session cookie.</li>
+        <li>A target such as <code>https://example.com/</code> becomes a proxy URL under <code>/butter/go/</code>, encoded with the configured codec.</li>
+        <li>The service worker intercepts every request the proxied page makes and hands it to the active transport. The built-in <code>butter</code> transport sends it to <code>/butter/fetch</code> with the target in <code>X-Butter-URL</code>.</li>
+        <li>The Lua server checks the target (DNS pinning, private-address guard), adds cookies from the session's jar, and lets nginx stream the upstream response back.</li>
+        <li>The service worker rewrites HTML, CSS and JavaScript so the page keeps working from this origin, and injects the client runtime.</li>
+      </ol>
+      <h3>Be careful</h3>
+      <p>Like every same-origin proxy, all proxied sites share this origin, and butter-col doesn't emulate CORS or SameSite yet. Don't log in to anything important through it, and don't expose this server to others without authentication. The full list is in the project's <a href="https://github.com/TheAxis-Network/butter-col/blob/main/docs/known-issues.html" target="_blank" rel="noopener">known issues</a>.</p>
+      <h3>Credits</h3>
+      <p>butter-col is made by <a href="https://github.com/TheAxis-Network" target="_blank" rel="noopener">Axis Network</a>, and was inspired by Mercury Workshop's Scramjet and Titanium Network's Ultraviolet. It is independent of both.</p>
+    </section>
+  </main>
+</body>
+</html>
